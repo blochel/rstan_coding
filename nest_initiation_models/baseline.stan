@@ -14,7 +14,7 @@ parameters {
 
 model {
   // Priors
-  alpha ~ normal(120, 20);   // weakly informative: ~day 120 +/- 20
+  alpha ~ normal(60, 20);  // ~March 1 = day 60, +/- 20 days                      (NOTE: WY starts May 1 - will need to be altered for water dynamics)
   sigma ~ exponential(1);    // weakly informative, forces positive
 
   // Likelihood

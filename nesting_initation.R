@@ -38,9 +38,13 @@ bird_data <- bird_raw |>
 # Take earliest nest initiation date per year, convert to Julian day
 bird_summary <- bird_data |>
   #only the first observation (less data)
-  group_by(water_year) |>
+  group_by(year) |>
   summarise(y = min(julian, na.rm = TRUE))
 
+#watchout for tricky water year issues later! 
+bird_data |> 
+  mutate(correct_Q = year == water_year) |> 
+  filter(correct_Q != TRUE)
 
 
 # baseline model  ---------------------------------------------------------
@@ -180,4 +184,5 @@ legend("topright",
                   paste("50% CI:", format(ci_50[1], "%b %d"), "to", format(ci_50[2], "%b %d")),
                   paste("95% CI:", format(ci_95[1], "%b %d"), "to", format(ci_95[2], "%b %d"))),
        col = "darkred", lwd = c(2, 1, 1), lty = c(1, 2, 3))
+
 
