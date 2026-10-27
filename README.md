@@ -8,3 +8,10 @@ $$y \sim \text{Normal}(\mu, \sigma)$$ $$\mu = \alpha$$
 - **μ** = mean nest initiation date
 - **α** = intercept
 - **σ** = standard deviation
+
+
+
+
+
+# ideas 
+- Temperature
