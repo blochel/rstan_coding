@@ -11,9 +11,9 @@ library(purrr)
 library(readr)
 library(rstan)
 library(tibble)
+library(tidyr)
 
-
-
+extract <- rstan::extract
 
 # nesting WOST initiation data ---------------------------------------------
 
@@ -30,19 +30,20 @@ bird_raw <- read_csv(url)
 
 
 bird_data <- bird_raw |>
-  mutate(julian = yday(flight_first_nest_obs),
-         # Water year starts in May of preceding year
-         # example: water year 1998 = May 1997 to April 1998
-         water_year = ifelse(month(flight_first_nest_obs) >= 5, 
-                             year(flight_first_nest_obs) + 1, 
-                             year(flight_first_nest_obs))) 
+  mutate(
+    # Water year: May of year-1 through April of year
+    water_year = ifelse(month(flight_first_nest_obs) >= 6,
+                        year(flight_first_nest_obs) + 1,
+                        year(flight_first_nest_obs)),
+    # Days since May 1 of the preceding calendar year
+    water_year_start = as.Date(paste0(water_year - 1, "-05-01")),
+    julian_wy        = as.numeric(flight_first_nest_obs - water_year_start) + 1
+  )
 
-
-# Take earliest nest initiation date per year, convert to Julian day
 bird_summary <- bird_data |>
-  #only the first observation (less data)
-  group_by(year) |>
-  summarise(y = min(julian, na.rm = TRUE))
+  group_by(water_year) |>
+  summarise(y = min(julian_wy, na.rm = TRUE)) |>
+  rename(year = water_year)
 
 #watchout for tricky water year issues later! 
 bird_data |> 
@@ -108,7 +109,7 @@ water |> names()
 
 
 # baseline model  ---------------------------------------------------------
-
+# no water, only time 
 
 
 y <- bird_summary$y
@@ -193,8 +194,8 @@ samples    <- extract(fit)
 y_pred     <- rnorm(4000, mean = samples$alpha, sd = samples$sigma)
 
 # Convert everything back to dates
-pred_dates  <- as.Date(paste0(test$year, "-01-01")) + y_pred - 1
-actual_date <- as.Date(paste0(test$year, "-01-01")) + test$y - 1
+pred_dates  <- as.Date(paste0(test$year, "-06-01")) + y_pred - 1
+actual_date <- as.Date(paste0(test$year, "-06-01")) + test$y - 1
 
 pred_df <- tibble(date = pred_dates)
 
@@ -228,12 +229,13 @@ ggplot(pred_df, aes(x = date)) +
 y_pred_2027 <- rnorm(4000, mean = samples$alpha, sd = samples$sigma)
 
 # Compute quantiles on numeric values first, then convert to dates
-ci_95       <- as.Date("2027-01-01") + quantile(y_pred_2027, probs = c(0.025, 0.975)) - 1
-ci_50       <- as.Date("2027-01-01") + quantile(y_pred_2027, probs = c(0.25,  0.75))  - 1
-median_pred <- as.Date("2027-01-01") + median(y_pred_2027) - 1
+ci_95           <- as.Date("2026-05-01") + quantile(y_pred_2027, probs = c(0.025, 0.975)) - 1
+ci_50           <- as.Date("2026-05-01") + quantile(y_pred_2027, probs = c(0.25,  0.75))  - 1
+median_pred     <- as.Date("2026-05-01") + median(y_pred_2027) - 1
+pred_dates_2027 <- as.Date("2026-05-01") + y_pred_2027 - 1
 
-pred_dates_2027 <- as.Date("2027-01-01") + y_pred_2027 - 1
-pred_df_2027 <- tibble(date = pred_dates_2027)
+pred_dates_2027 <- as.Date("2026-05-01") + y_pred_2027 - 1  
+pred_df_2027    <- tibble(date = pred_dates_2027)            
 
 ggplot(pred_df_2027, aes(x = date)) +
   geom_histogram(aes(y = after_stat(density), fill = "Predicted"),
@@ -397,9 +399,9 @@ loo_hydro_long <- loo_hydro |>
 
 # Scatter: each hydro variable vs residual, off years labelled
 ggplot(loo_hydro_long, aes(x = value, y = residual)) +
-  geom_hline(yintercept = c(-14, 0, 14),
-             linetype = c("dotted", "dashed", "dotted"),
-             color    = "grey50") +
+  geom_hline(yintercept =   0, linetype = "dashed", color = "grey50") +
+  geom_hline(yintercept =  14, linetype = "dotted", color = "grey50") +
+  geom_hline(yintercept = -14, linetype = "dotted", color = "grey50") +
   geom_point(aes(color = direction), size = 2, alpha = 0.8) +
   ggrepel::geom_label_repel(
     data  = filter(loo_hydro_long, off_year),
