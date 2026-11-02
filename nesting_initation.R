@@ -180,7 +180,10 @@ ggplot(pred_df_2027, aes(x = date)) +
         plot.title       = element_text(hjust = 0.5, face = "bold"))
 
 # LOO expanding window ----------------------------------------------------
-min_train <- 5
+# https://mc-stan.org/loo/articles/loo2-non-factorizable.html
+
+
+min_train <- 10
 years     <- sort(unique(bird_summary$year))
 loo_years <- years[years >= years[min_train + 1]]
 
@@ -211,7 +214,7 @@ run_loo_fold <- function(hold_out_year) {
     ci50_hi     = quantile(y_pred, 0.75),
     ci95_lo     = quantile(y_pred, 0.025),
     ci95_hi     = quantile(y_pred, 0.975),
-    residual    = actual - pred_median  # positive = nesting LATER than predicted
+    residual    = actual - pred_median  # if this is positive then nesting LATER than predicted
   )
 }
 
@@ -229,13 +232,9 @@ loo_results <- loo_results |>
 
 # LOO residual plot -------------------------------------------------------
 ggplot(loo_results, aes(x = year, y = residual)) +
-  geom_hline(yintercept =   0, linetype = "dashed", color = "grey50") +
-  geom_hline(yintercept =  14, linetype = "dotted", color = "coral") +
-  geom_hline(yintercept = -14, linetype = "dotted", color = "coral") +
-  geom_ribbon(aes(ymin = ci95_lo - pred_median, ymax = ci95_hi - pred_median),
-              fill = "steelblue", alpha = 0.15) +
-  geom_ribbon(aes(ymin = ci50_lo - pred_median, ymax = ci50_hi - pred_median),
-              fill = "steelblue", alpha = 0.30) +
+  geom_hline(yintercept =   0, linetype = "dashed", color = "red") +
+  geom_hline(yintercept =  14, linetype = "dashed", color = "coral") +
+  geom_hline(yintercept = -14, linetype = "dashed", color = "coral") +
   geom_line(color = "grey40", linewidth = 0.5) +
   geom_point(aes(color = direction), size = 3) +
   ggrepel::geom_label_repel(
@@ -281,9 +280,9 @@ loo_hydro_long <- loo_hydro |>
                values_to = "value")
 
 ggplot(loo_hydro_long, aes(x = value, y = residual)) +
-  geom_hline(yintercept =   0, linetype = "dashed", color = "grey50") +
-  geom_hline(yintercept =  14, linetype = "dotted", color = "grey50") +
-  geom_hline(yintercept = -14, linetype = "dotted", color = "grey50") +
+  geom_hline(yintercept =   0, linetype = "dashed", color = "red") +
+  geom_hline(yintercept =  14, linetype = "dashed", color = "coral") +
+  geom_hline(yintercept = -14, linetype = "dashed", color = "coral") +
   geom_smooth(method = "lm", color = "grey30", fill = "grey80", alpha = 0.4) +
   geom_point(aes(color = direction), size = 2, alpha = 0.8) +
   ggrepel::geom_label_repel(
