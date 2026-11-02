@@ -15,3 +15,5 @@ $$y \sim \text{Normal}(\mu, \sigma)$$ $$\mu = \alpha$$
 
 # ideas 
 - Temperature
+- multiscale habitat selection (water dynamics in area of initiation)
+
