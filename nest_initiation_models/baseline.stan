@@ -22,7 +22,14 @@ model {
 }
 
 generated quantities {
-  vector[N] y_rep;           // posterior predictive samples
-  for (i in 1:N)
-    y_rep[i] = normal_rng(alpha, sigma);
+  vector[N] y_rep;
+  vector[N] log_lik;           // add this
+  for (i in 1:N) {
+    y_rep[i]   = normal_rng(alpha, sigma);
+    log_lik[i] = normal_lpdf(y[i] | alpha, sigma);  // add this
+  }
 }
+
+
+
+

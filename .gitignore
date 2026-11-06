@@ -6,3 +6,5 @@
 
 # Data folders to exclude
 WaterData/
+outputs/
+figures/
